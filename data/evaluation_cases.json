@@ -1,0 +1,26 @@
+[
+  {
+    "id": "known-vacation",
+    "question": "What is the vacation policy?",
+    "expected_contains": "30 vacation days",
+    "expected_tool_use": true
+  },
+  {
+    "id": "known-remote",
+    "question": "What is the remote-work policy?",
+    "expected_contains": "3 days per week",
+    "expected_tool_use": true
+  },
+  {
+    "id": "unknown-policy",
+    "question": "What is the dress code policy?",
+    "expected_contains": "No matching policy",
+    "expected_tool_use": true
+  },
+  {
+    "id": "no-tool-needed",
+    "question": "Say hello.",
+    "expected_contains": "Hello",
+    "expected_tool_use": false
+  }
+]
