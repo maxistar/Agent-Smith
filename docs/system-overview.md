@@ -2,6 +2,9 @@
 
 Этот документ даёт общую картину системы, которую проект разбирает по отдельным исполняемым урокам. Он не предполагает, что языковая модель сама умеет вызывать Python-функции, хранить состояние или управлять workflow: всё это обязанности приложения вокруг модели.
 
+Продолжение учебного пути — indexing, semantic retrieval, Chroma и три формы RAG —
+разобрано отдельно в [rag-overview.md](rag-overview.md).
+
 ## Четыре слоя
 
 ```text
@@ -204,4 +207,8 @@ Metrics: answer correctness + expected tool use
 
 ## Граница этого проекта
 
-Учебный `search_docs` ищет по фиксированному словарю. Он нужен для понимания tool calling, а не для демонстрации retrieval quality. Проект сознательно не включает vector database, production RAG, web service, voice interface, multi-agent coordination и durable database persistence. Эти темы логично изучать после того, как базовый цикл сообщений, tools, state и routing перестал быть «магией».
+Учебный `search_docs` ищет по фиксированному словарю и остаётся baseline для понимания
+tool calling. Уроки 11–20 добавляют отдельный `retrieve_docs`: он делит документы на
+chunks, строит embeddings и ищет evidence в локальном Chroma. Это учебный RAG, а не
+production search service: web API, реальные документы, multi-tenant access,
+distributed indexing и durable application state остаются вне проекта.

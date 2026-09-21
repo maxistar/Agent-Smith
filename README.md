@@ -1,10 +1,10 @@
 # AgentSmith: LangGraph шаг за шагом
 
-Учебный Python-проект, который показывает, как обычный вызов LLM постепенно превращается в агента с инструментами, состоянием, persistence, трассировкой и оценкой качества.
+Учебный Python-проект, который показывает, как обычный вызов LLM постепенно превращается в агента с инструментами, состоянием и оценкой качества, а затем — в RAG-систему с Chroma.
 
 Каждый урок запускается отдельно и добавляет одну основную идею. По умолчанию используется детерминированная офлайн-модель: API-ключи, сеть и платные вызовы не нужны. Флаг `--live` явно включает настоящий OpenAI-вызов.
 
-Подробная ментальная модель всей системы находится в [docs/system-overview.md](docs/system-overview.md).
+Подробная ментальная модель всей системы находится в [docs/system-overview.md](docs/system-overview.md), а indexing и query-time RAG разобраны в [docs/rag-overview.md](docs/rag-overview.md).
 
 ## Быстрый старт
 
@@ -39,6 +39,16 @@ uv run pytest
 | 08 | Tracing | LangSmith наблюдает уже работающий граф | `uv run python -m examples.lesson_08_tracing` |
 | 09 | Reliability | Ошибки tools и бесконечный цикл становятся ограниченными | `uv run python -m examples.lesson_09_reliability` |
 | 10 | Evaluation | Dataset сравнивает правильность ответа и tool use | `uv run python -m examples.lesson_10_evaluation` |
+| 11 | Documents | Синтетический корпус и provenance в `Document.metadata` | `uv run python -m examples.lesson_11_documents` |
+| 12 | Chunking | Влияние размера, overlap и границ на chunks | `uv run python -m examples.lesson_12_chunking` |
+| 13 | Embeddings | Объяснимые vectors и semantic similarity | `uv run python -m examples.lesson_13_embeddings` |
+| 14 | Chroma | In-memory индекс и similarity search со scores | `uv run python -m examples.lesson_14_chroma` |
+| 15 | Retrieval | `k`, metadata filters и MMR | `uv run python -m examples.lesson_15_retrieval` |
+| 16 | Persistence | Rebuild, CRUD и повторное открытие Chroma | `uv run python -m examples.lesson_16_persistence --rebuild` |
+| 17 | Two-step RAG | Всегда retrieve, затем cited answer или abstention | `uv run python -m examples.lesson_17_two_step_rag` |
+| 18 | Agentic RAG | Модель решает, вызывать ли `retrieve_docs` | `uv run python -m examples.lesson_18_agentic_rag` |
+| 19 | LangGraph RAG | Явные retrieve/grade/generate/abstain nodes | `uv run python -m examples.lesson_19_langgraph_rag` |
+| 20 | RAG evaluation | Retrieval и answer metrics считаются отдельно | `uv run python -m examples.lesson_20_rag_evaluation` |
 
 ### Ключевая разница уроков 03–05
 
@@ -53,6 +63,29 @@ uv run pytest
 ```
 
 LLM не вызывает Python-функцию самостоятельно. Она возвращает структурированное намерение. Исполняет его приложение; LangGraph формализует состояние и переходы.
+
+### RAG quick start
+
+Уроки 11–20 используют только синтетические файлы из `knowledge/`. По умолчанию
+работает небольшая объяснимая embedding-модель: сеть, API keys и Chroma Cloud не нужны.
+
+```bash
+uv sync
+uv run python -m examples.lesson_11_documents
+uv run python -m examples.lesson_14_chroma
+uv run python -m examples.lesson_17_two_step_rag
+uv run python -m examples.lesson_20_rag_evaluation
+```
+
+Урок 16 создаёт локальный индекс в `.agentsmith/chroma/`:
+
+```bash
+uv run python -m examples.lesson_16_persistence --rebuild
+rm -rf .agentsmith/chroma
+```
+
+Каталог является генерируемым и игнорируется Git. Удаляйте только этот путь из корня
+проекта; индекс всегда можно восстановить из учебного корпуса.
 
 ## Live-режим
 
@@ -82,7 +115,20 @@ uv run python -m examples.lesson_07_persistence --live
 uv run python -m examples.lesson_10_evaluation --live
 ```
 
-`AGENTSMITH_MODEL` выбирает модель; значение по умолчанию — `gpt-5-mini`. Сейчас учебный model factory поддерживает `AGENTSMITH_PROVIDER=openai`.
+`AGENTSMITH_MODEL` выбирает chat model; значение по умолчанию — `gpt-5-mini`.
+`AGENTSMITH_EMBEDDING_MODEL` отдельно выбирает embedding model; по умолчанию
+`text-embedding-3-small`. Сейчас учебные factory поддерживают
+`AGENTSMITH_PROVIDER=openai`.
+
+Для сетевого RAG-запуска добавьте `--live`, например:
+
+```bash
+uv run python -m examples.lesson_13_embeddings --live
+uv run python -m examples.lesson_17_two_step_rag --live
+```
+
+Live embeddings отправляют chunks и запросы внешнему provider и могут стоить денег.
+Offline и live indexes несовместимы: при смене embedding model перестройте индекс.
 
 ## LangSmith tracing
 
@@ -116,6 +162,10 @@ uv run ruff format --check .
 - ограничение повторяющихся tool calls;
 - отсутствие требования OpenAI/LangSmith credentials в offline-режиме;
 - все четыре evaluation-сценария.
+- загрузку и chunking синтетического корпуса;
+- embeddings, Chroma search/filters/MMR и persistent reopen;
+- citations, abstention и обе ветви RAG-графа;
+- retrieval hit@k отдельно от grounding, citations и tool use.
 
 Live smoke checks выполняются отдельно и могут стоить денег:
 
@@ -131,7 +181,9 @@ uv run python -m examples.lesson_08_tracing --live
 - Live-вызовы отправляют prompts и tool results внешнему provider; tracing дополнительно отправляет trajectory в LangSmith.
 - LLM-ответы недетерминированы, поэтому offline-тесты проверяют структуру, а не точный live-текст.
 - `InMemorySaver` из урока 07 сохраняет thread state только внутри текущего процесса. После перезапуска Python состояние исчезает.
-- Это учебный tool над фиксированным словарём, а не production RAG или search service.
+- `search_docs` — учебный literal lookup над словарём; `retrieve_docs` — отдельный semantic retrieval tool над Chroma.
+- Учебные embeddings прозрачны и детерминированы, но не являются production semantic model.
+- Retrieved content считается недоверенными данными: генератор получает его в явных evidence-блоках, однако полноценная защита от prompt injection остаётся вне этого курса.
 
 ## Частые проблемы
 
@@ -146,3 +198,7 @@ uv run python -m examples.lesson_08_tracing --live
   durable database persistence не входит в этот учебный путь.
 - **Цикл остановлен по recursion limit:** защитная граница сработала, потому что модель
   продолжала запрашивать tools вместо финального ответа. См. урок 09.
+- **Chroma сообщает о несовместимом embedding:** удалите `.agentsmith/chroma/` и
+  запустите урок 16 с `--rebuild`; размерность и смысл vectors должны совпадать.
+- **Semantic result выглядит странно:** raw distance не является вероятностью.
+  Проверьте chunks, embedding mode, metadata filter и ожидаемый source до настройки threshold.

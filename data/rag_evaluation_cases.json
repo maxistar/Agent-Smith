@@ -1,0 +1,43 @@
+[
+  {
+    "id": "answerable-vacation",
+    "question": "How much annual holiday do employees receive?",
+    "expected_sources": ["hr/leave-policy.md"],
+    "expected_contains": "30 paid vacation days",
+    "expected_tool_use": true,
+    "unsupported": false
+  },
+  {
+    "id": "paraphrased-lost-device",
+    "question": "What should I do after my company laptop is stolen?",
+    "expected_sources": ["security/access-policy.md"],
+    "expected_contains": "reported to the security team",
+    "expected_tool_use": true,
+    "unsupported": false
+  },
+  {
+    "id": "filtered-expense-domain",
+    "question": "What is the reimbursement limit for a business dinner?",
+    "expected_sources": ["finance/expense-policy.md"],
+    "expected_contains": "60 EUR per person",
+    "metadata_filter": {"department": "finance"},
+    "expected_tool_use": true,
+    "unsupported": false
+  },
+  {
+    "id": "no-retrieval-greeting",
+    "question": "Hello, how are you?",
+    "expected_sources": [],
+    "expected_contains": "Hello",
+    "expected_tool_use": false,
+    "unsupported": false
+  },
+  {
+    "id": "unsupported-space-policy",
+    "question": "What is the company policy on musical instruments?",
+    "expected_sources": [],
+    "expected_contains": "not enough evidence",
+    "expected_tool_use": true,
+    "unsupported": true
+  }
+]
